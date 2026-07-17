@@ -1,0 +1,22 @@
+convexity
+Copyright 2026 Demi Oyeyemi
+
+This product is licensed under the Apache License, Version 2.0 (the "License").
+You may obtain a copy of the License in the LICENSE file distributed with this
+work, or at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Third-party dependency licences are listed in THIRD_PARTY_NOTICES.md.
+
+DATA NOTICE
+-----------
+This project distributes no market, economic, or financial data of any kind.
+Optional data adapters retrieve data at runtime, directly from the provider, on
+behalf of the user. Data retrieved through those adapters is governed by the
+terms of the provider that supplies it, and by any third-party rights in the
+underlying series. Those terms are neither granted nor extended by this
+project's licence. See docs/providers/provider-matrix.md before relying on any
+provider for a given purpose.
+
+This software is a research and analysis tool. It is not investment advice.

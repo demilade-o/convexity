@@ -1,0 +1,26 @@
+# Normalise line endings so Windows contributors do not produce noisy diffs and
+# the Windows CI job tests the same bytes as Linux and macOS.
+* text=auto eol=lf
+
+*.py     text diff=python
+*.toml   text
+*.md     text diff=markdown
+*.yml    text
+*.yaml   text
+*.cff    text
+*.json   text
+
+# Windows-only scripts keep CRLF.
+*.bat    text eol=crlf
+*.ps1    text eol=crlf
+
+# Binary: never diff or normalise.
+*.png    binary
+*.jpg    binary
+*.gz     binary
+*.whl    binary
+*.parquet binary
+
+# Keep repository-plumbing files out of language statistics and diffs.
+uv.lock            linguist-generated=true -diff
+docs/reference/**  linguist-documentation=true

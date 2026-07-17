@@ -1,0 +1,60 @@
+# Byte-compiled / optimised / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+.venv-*/
+
+# Testing / coverage
+.pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# Type checking / linting caches
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+
+# Documentation build
+site/
+
+# Provider response cache. Downloaded market data is never committed: it may be
+# licensed, it is not ours to redistribute, and it makes tests non-deterministic.
+.convexity-cache/
+*.cache
+
+# Secrets. No credential ever belongs in version control.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.toml
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Build artefacts from local release rehearsals
+*.whl
+*.tar.gz
+sbom*.json
