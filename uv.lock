@@ -344,6 +344,7 @@ dev = [
     { name = "ruff" },
 ]
 docs = [
+    { name = "httpx" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
@@ -397,6 +398,7 @@ dev = [
     { name = "ruff", specifier = ">=0.8" },
 ]
 docs = [
+    { name = "httpx", specifier = ">=0.27" },
     { name = "mkdocs", specifier = ">=1.6" },
     { name = "mkdocs-material", specifier = ">=9.5" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.27" },

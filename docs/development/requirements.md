@@ -90,18 +90,32 @@ silently; see [ROADMAP.md](https://github.com/demilade-o/convexity/blob/main/ROA
 | REQ-VAL-007 | Constant and zero-volatility series behave per documented policy. | Implemented |
 | REQ-VAL-008 | Errors are package-specific and actionable. | Implemented |
 
+## Risk-free rates (REQ-RTE)
+
+| ID | Requirement | Status |
+| --- | --- | --- |
+| REQ-RTE-001 | `RateQuote` carries value, date, currency, tenor, compounding, day count, instrument, source, and staleness. | Implemented |
+| REQ-RTE-002 | An annual quote converts to a period return under a declared compounding convention. | Implemented |
+| REQ-RTE-003 | `RiskFreeSeries` aligns onto a target calendar with backward as-of logic and no look-ahead. | Implemented |
+| REQ-RTE-004 | Alignment honours `max_staleness` and a configurable `publication_lag`. | Implemented |
+| REQ-RTE-005 | `RiskFreePolicy` refuses to convert across currencies silently. | Implemented |
+| REQ-RTE-006 | `ZeroCurve` provides discount factors and forward rates with declared interpolation and stated extrapolation. | Implemented |
+| REQ-RTE-007 | Rate distinctions (overnight, bill, constant-maturity, OIS) are modelled, not conflated. | Implemented |
+| REQ-RTE-008 | Zero-curve bootstrap from market instruments. | **Deferred → 0.3.0** |
+
 ## Data providers (REQ-DAT)
 
 | ID | Requirement | Status |
 | --- | --- | --- |
 | REQ-DAT-001 | Analytics make no network calls; enforced mechanically. | Implemented |
 | REQ-DAT-002 | No credential, cache, or provider data is tracked or shipped. | Implemented |
-| REQ-DAT-003 | Capability-based provider protocols with package-owned models. | **Deferred → 0.2.0** |
-| REQ-DAT-004 | Every fetch returns provenance. | **Deferred → 0.2.0** |
-| REQ-DAT-005 | Cache with atomic writes, offline mode, and no unsafe deserialisation. | **Deferred → 0.2.0** |
-| REQ-DAT-006 | Timeouts, bounded retries with backoff, rate-limit awareness. | **Deferred → 0.2.0** |
-| REQ-DAT-007 | At least one key-free official rate/economic provider. | **Deferred → 0.2.0** |
-| REQ-DAT-008 | yfinance optional, research/personal-use labelled, never a build dependency. | **Deferred → 0.2.0** |
+| REQ-DAT-003 | Capability-based provider protocols with package-owned models. | Implemented |
+| REQ-DAT-004 | Every fetch returns provenance. | Implemented |
+| REQ-DAT-005 | Cache with atomic writes, offline mode, and no unsafe deserialisation. | Implemented |
+| REQ-DAT-006 | Timeouts, bounded retries with backoff, rate-limit awareness. | Implemented |
+| REQ-DAT-007 | At least one key-free official rate/economic provider. | Implemented |
+| REQ-DAT-008 | yfinance optional, research/personal-use labelled, never a build dependency. | Implemented |
+| REQ-DAT-009 | Further rate/economic providers (ECB, FRED). | **Deferred → 0.2.0** |
 
 ## Packaging and quality (REQ-PKG)
 

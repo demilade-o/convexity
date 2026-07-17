@@ -2,8 +2,7 @@
 
 The cache stores raw response bytes, base64-encoded inside a small JSON record.
 It never uses :mod:`pickle`: a cache is exactly the kind of untrusted store where
-unpickling arbitrary objects would be a remote-code-execution risk, and the brief
-forbids it.
+unpickling arbitrary objects would be a remote-code-execution risk.
 
 Keys are hashed to a fixed-length hex digest before they become a filename, so a
 caller-supplied key can never escape the cache directory through ``..`` or an

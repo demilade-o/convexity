@@ -24,20 +24,31 @@ tests non-deterministic. Contract tests use constructed fixtures.
 
 ## Status
 
-**No provider adapters ship in 0.1.0.** The `providers` and `yahoo` extras are
-declared, but the adapters arrive in `0.2.0` — see [ROADMAP.md](https://github.com/demilade-o/convexity/blob/main/ROADMAP.md).
+**Two adapters ship in 0.1.0:** U.S. Treasury Fiscal Data (key-free, official)
+and the optional research-only Yahoo adapter. ECB and FRED are assessed here and
+planned for `0.2.0` — see [ROADMAP.md](https://github.com/demilade-o/convexity/blob/main/ROADMAP.md).
 
-This page records the policy and the assessment of each candidate now, because
-the legal assessment is the part that must not be rushed at implementation time.
+This page records the policy and the assessment of each candidate, because the
+legal assessment is the part that must not be rushed.
 
-## Planned adapters
+## Adapters
 
 | Provider | Data | Auth | Terms | Commercial use | Redistribution | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| U.S. Treasury Fiscal Data | USD bill/yield series | **None** | [Fiscal Data](https://fiscaldata.treasury.gov/api-documentation/) | Believed permitted (US federal work) — **verify at implementation** | Believed permitted — **verify** | Planned 0.2.0 |
+| U.S. Treasury Fiscal Data | USD average interest rates | **None** | [Fiscal Data](https://fiscaldata.treasury.gov/api-documentation/) | Believed permitted (US federal work) — **verify for your use** | Believed permitted — **verify** | **Shipped 0.1.0** |
+| Yahoo (via yfinance) | Prices | None | [yfinance docs](https://ranaroussi.github.io/yfinance/) | **No — personal use only** | **No** | **Shipped 0.1.0**, `convexity[yahoo]` |
 | ECB Data Portal | EUR rates, €STR | **None** | [ECB Data Portal](https://data.ecb.europa.eu/) | **Unknown — verify** | **Unknown — verify** | Planned 0.2.0 |
 | FRED | Economic series | **API key** | [FRED API terms](https://fred.stlouisfed.org/docs/api/terms_of_use.html) | **Restricted — see below** | **No** for third-party series | Planned 0.2.0, optional extra |
-| Yahoo (via yfinance) | Prices | None | [yfinance docs](https://ranaroussi.github.io/yfinance/) | **No — personal use only** | **No** | Planned 0.2.0, optional extra |
+
+## What the Treasury adapter returns
+
+The shipped adapter reads the *Average Interest Rates on U.S. Treasury Securities*
+dataset. This is the average rate on the **outstanding stock** of a security type,
+published monthly — a coarse short-rate proxy, not a new-issue bill yield. The
+adapter surfaces that caveat in every response's provenance `warnings` rather than
+letting a caller mistake it for a current-coupon yield. It is chosen as the first
+provider precisely because it is key-free and therefore independently verifiable:
+anyone who checks out the repository can smoke-test the real integration.
 
 Where a cell says **unknown**, it means unknown. It does not mean "probably
 fine". Inferring permission is how a project ends up redistributing something it

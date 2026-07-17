@@ -71,6 +71,8 @@ nav:
   - Concepts:
       - Conventions: concepts/conventions.md
       - Point-in-time data: concepts/point-in-time.md
+      - Risk-free rates: concepts/risk-free-rates.md
+      - Data providers: concepts/data-providers.md
   - Metric catalogue: metrics/index.md
   - Tutorials:
       - Performance analysis: tutorials/performance-analysis.md

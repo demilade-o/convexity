@@ -6,9 +6,9 @@
 
 ## Context
 
-This ADR records two owner-approved amendments to the original build
-specification. Both change what a reader should expect from `0.1.0`, so they are
-recorded rather than absorbed silently.
+This ADR records two owner-approved decisions about `0.1.0`'s scope. Both change
+what a reader should expect from the first release, so they are recorded rather
+than absorbed silently.
 
 ## Amendment 1: Python 3.12–3.14, not 3.11–3.14
 
@@ -44,30 +44,31 @@ plus the oldest and newest on macOS and Windows.
 
 ### Reason
 
-The full specification spans returns, performance, risk, portfolio,
+The full intended scope spans returns, performance, risk, portfolio,
 fixed-income, equity, commodity and rate analytics, plus a provider subsystem
 and full project infrastructure, at 95%/90% branch coverage with independent
 validation of every formula.
 
 Attempting all of it at once produces thin validation everywhere — which is the
-failure mode the specification most wants to avoid, and worse than a smaller
-release done properly. Correctness before coverage of surface area.
+outcome this project most wants to avoid, and worse than a smaller release done
+properly. Correctness before coverage of surface area.
 
-The dividing line is which parts the goal makes a *release condition*. The
-risk-free-rate subsystem and the pluggable, provenance-bearing data layer with a
-key-free official rate provider are named explicitly in the goal's completion
-conditions (4) and (5); they cannot be deferred without failing the goal, and
-the ratios already accept time-varying rate inputs that these models exist to
-supply. They are therefore in 0.1.0. The remaining *asset* domains — portfolio,
-fixed income, equity, commodities — are genuinely separable milestones and are
-deferred with targets.
+The dividing line is foundation versus asset domain. The risk-free-rate subsystem
+and the pluggable, provenance-bearing data layer are foundational: the
+Sharpe/Sortino/Calmar ratios already accept time-varying rate inputs, and those
+inputs have to come from somewhere explicit and look-ahead-safe rather than an
+unexplained float. A first release that computes risk-adjusted performance but
+cannot say where its risk-free rate came from is not honestly scoped. They are
+therefore in 0.1.0. The remaining *asset* domains — portfolio, fixed income,
+equity, commodities — are genuinely separable milestones and are deferred with
+targets.
 
 ### History
 
-An earlier revision of this ADR deferred the rate subsystem and provider layer
-to 0.2.0 as well. That was corrected on **2026-07-17** by owner decision: those
-two subsystems are release conditions for 0.1.0, not deferrable scope. The record
-is kept rather than rewritten silently.
+An earlier revision of this ADR deferred the rate subsystem and provider layer to
+0.2.0 as well. That was corrected on **2026-07-17** by owner decision: those two
+subsystems belong in 0.1.0 as foundations, not deferrable scope. The record is
+kept rather than rewritten silently.
 
 ### Decision
 

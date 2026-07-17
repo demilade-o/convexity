@@ -93,13 +93,32 @@ uv run pytest --cov --cov-branch -q
 | REQ-VAL-007 | `test_risk.py::TestVolatility::test_constant_series_has_exactly_zero_volatility`; `test_performance_sharpe.py::TestZeroDenominatorPolicy::*` |
 | REQ-VAL-008 | Every `pytest.raises` in the suite asserts a `convexity.exceptions` type and matches on message content |
 
+## Risk-free rates
+
+| ID | Proven by |
+| --- | --- |
+| REQ-RTE-001 | `test_rates.py::TestRateQuote::*`, `::TestCurrencyValidation::*` (value finiteness, currency normalisation, all convention fields) |
+| REQ-RTE-002 | `test_rates.py::TestRateQuote::test_period_return_simple_hand_worked`, `::test_period_return_honours_compounding`, `::test_period_return_override_beats_quote_convention`; `property/test_invariants.py::TestRateModelInvariants::test_annual_period_round_trip_through_a_quote` |
+| REQ-RTE-003 | `test_rates.py::TestRiskFreeSeriesAlignment::test_backward_only_no_lookahead`, `::test_date_before_first_observation_is_nan`; `property/test_invariants.py::TestRateModelInvariants::test_risk_free_series_alignment_never_looks_ahead` |
+| REQ-RTE-004 | `test_rates.py::TestRiskFreeSeriesAlignment::test_staleness_enforced`, `::test_publication_lag_delays_availability` |
+| REQ-RTE-005 | `test_rates.py::TestRiskFreePolicy::test_currency_mismatch_raises`, `::test_instrument_mismatch_raises_by_default`, `::test_instrument_mismatch_allowed_when_disabled` |
+| REQ-RTE-006 | `test_rates.py::TestZeroCurveMath::*` (discount factor at 0, flat-curve `exp(-rt)`, interpolation, flat extrapolation, forward hand-worked, DF↔zero round trip); `property/test_invariants.py::TestZeroCurveInvariants::*` |
+| REQ-RTE-007 | `test_rates.py::TestRiskFreePolicy::test_instrument_mismatch_raises_by_default` (instruments modelled as `RateInstrument`, checked not conflated) |
+| REQ-RTE-008 | **Deferred → 0.3.0.** Bootstrap arrives with the fixed-income module that consumes it. |
+
 ## Data providers
 
 | ID | Proven by |
 | --- | --- |
-| REQ-DAT-001 | `lint-imports` forbidden contract (no analytics module may import `httpx`, `socket`, `urllib`, `requests`, `yfinance`); the entire suite runs under `--disable-socket` |
+| REQ-DAT-001 | `lint-imports` forbidden contract (no analytics or rate module may import `httpx`, `socket`, `urllib`, `requests`, `yfinance`); the entire suite runs under `--disable-socket`; `test_data_layer_is_not_imported_by_convexity` proves `import convexity` loads no networking |
 | REQ-DAT-002 | `scripts/check_artefacts.py` (run in CI and the release workflow); `scripts/check_staged.py` (pre-commit); both verified to reject `ref/`, `.env`, `secrets.toml` and `.csv` fixtures while passing ordinary source |
-| REQ-DAT-003 … 008 | **Deferred → 0.2.0.** No provider code ships in 0.1.0; the `providers` and `yahoo` extras are declared but empty of adapters. |
+| REQ-DAT-003 | `contract/test_provider_contracts.py::*` (both providers satisfy the `Provider` and capability protocols); `test_provider_registry.py::TestCapabilityLookup::*` |
+| REQ-DAT-004 | `integration/test_treasury_provider.py::test_provenance_is_complete`; `test_yahoo_provider.py::TestNormalisation::test_provenance_is_research_only`; `test_data_models.py::*` (envelope binds data to immutable provenance) |
+| REQ-DAT-005 | `test_cache.py::TestSafety::*` (atomic write, traversal-safe keys, corruption→miss, no `pickle`); `integration/test_treasury_provider.py::test_offline_served_from_cache`, `::test_offline_without_cache_raises` |
+| REQ-DAT-006 | `test_transport.py::*` (retry on 429/5xx, bounded retries, exponential jittered backoff, `Retry-After` honoured, no retry on 4xx, connection error → `ProviderUnavailableError`) |
+| REQ-DAT-007 | `integration/test_treasury_provider.py::*` — U.S. Treasury Fiscal Data, key-free, `requires_auth is False`; respx-mocked, network never touched |
+| REQ-DAT-008 | `test_yahoo_provider.py::*` — behind `convexity[yahoo]`, `research_only is True`, missing-yfinance raises a helpful error; the forbidden-import contract proves the core never imports it |
+| REQ-DAT-009 | **Deferred → 0.2.0.** ECB and FRED adapters; policy and legal assessment recorded now in the provider matrix. |
 
 ## Packaging and quality
 
@@ -116,16 +135,22 @@ uv run pytest --cov --cov-branch -q
 | REQ-PKG-009 | `.github/workflows/security.yml` — **defined; executes on a remote** |
 | REQ-PKG-010 | `.github/workflows/release.yml` — **defined; requires owner approval and a remote** |
 | REQ-PKG-011 | `test_registry.py::TestRegistryCoversThePublicApi::test_every_exported_metric_is_registered` (34 of 34) |
-| REQ-PKG-012 | `test_registry.py::TestSpecCompleteness::*`; hand derivations for Sharpe, Sortino and Calmar; 27 property tests |
+| REQ-PKG-012 | `test_registry.py::TestSpecCompleteness::*`; hand derivations for Sharpe, Sortino and Calmar; 31 property tests |
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Implemented and locally verified | 47 |
+| Implemented and locally verified | 68 |
 | Implemented; configuration verified, execution requires a remote | 5 |
-| Deferred with a target release | 11 |
+| Deferred with a target release | 13 |
 | **Unimplemented and untracked** | **0** |
 
 No in-scope requirement for 0.1.0 is unimplemented. Every deferred requirement
 names its target release.
+
+The risk-free-rate subsystem (REQ-RTE) and the data provider layer (REQ-DAT-003
+through 008) are foundational to 0.1.0 by owner decision, not deferrable scope;
+they are implemented and verified here. See
+[ADR 0008](https://github.com/demilade-o/convexity/blob/main/docs/adr/0008-scope-amendment.md)
+for the record of that decision.

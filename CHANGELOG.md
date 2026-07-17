@@ -17,8 +17,9 @@ Nothing yet.
 
 ## [0.1.0] — unreleased
 
-First release. Computational foundations, with the conventions layer that
-everything else depends on.
+First release. Computational foundations and the conventions layer that
+everything else depends on, plus the risk-free-rate subsystem and a pluggable,
+provenance-bearing data layer.
 
 ### Added
 
@@ -62,6 +63,33 @@ everything else depends on.
 - `align_series` (inner join, no forward-filling) and `align_asof`
   (backward-looking, with `max_staleness` and `publication_lag`).
 
+**Risk-free rates** (`convexity.rates`)
+
+- `RateQuote`, `RiskFreeSeries`, `ZeroCurve`, `RiskFreePolicy` — every rate
+  carries its currency, tenor, quote date, compounding, day count, instrument,
+  source, and staleness.
+- Annual-quote-to-period-return conversion under a declared compounding
+  convention; alignment onto a return calendar with no look-ahead.
+- `RiskFreePolicy` refuses to convert across currencies silently.
+- `ZeroCurve` discount factors and forward rates with declared interpolation and
+  stated flat extrapolation.
+
+**Data providers** (`convexity.data`)
+
+- Capability-based provider protocols (`RiskFreeRateProvider`,
+  `EconomicSeriesProvider`, `PriceHistoryProvider`), a `ProviderRegistry`, and a
+  `DataEnvelope` that binds every fetch to an immutable `Provenance` record.
+- A `FileCache` with atomic writes, an offline mode, traversal-safe keys, and no
+  `pickle`; a retrying transport with bounded jittered backoff that honours
+  `Retry-After`.
+- `TreasuryFiscalDataProvider` — U.S. Treasury Fiscal Data, official and
+  requiring **no API key**, returning a USD `RiskFreeSeries`.
+- Optional `YahooFinanceProvider` behind `convexity[yahoo]`, labelled
+  research/personal-use only and never a test or build dependency.
+- Importing `convexity` performs no network setup and loads no HTTP client; the
+  architecture contracts forbid any analytics or rate module from importing a
+  provider.
+
 **Infrastructure**
 
 - Machine-readable metric registry, tested against the public API so the
@@ -87,6 +115,11 @@ everything else depends on.
 
 - Portfolio, fixed-income, equity and commodity analytics are not in this
   release. See [ROADMAP.md](ROADMAP.md) for targets.
+- The shipped rate provider returns Treasury *average* interest rates on
+  outstanding debt — a monthly short-rate proxy, not a new-issue yield. The
+  caveat is surfaced in each response's provenance.
+- ECB and FRED providers, and zero-curve bootstrapping from market instruments,
+  are planned for later releases.
 - Only ACT/360 and ACT/365F day counts ship; the rest arrive with fixed income.
 - Python 3.11 is not supported: NumPy ≥2.5 and SciPy ≥1.18 require ≥3.12.
 

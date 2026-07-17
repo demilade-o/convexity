@@ -354,3 +354,67 @@ class TestAlignmentInvariants:
             # target date it informed.
             observed_at = sources[int(got)]
             assert observed_at <= targets[position]
+
+
+# Rates strategy: plausible annual rates including zero and mildly negative
+# (negative policy rates are real), bounded away from the -100% singularity.
+rate_values = st.floats(
+    min_value=-0.02, max_value=0.25, allow_nan=False, allow_infinity=False, width=64
+)
+
+
+class TestRateModelInvariants:
+    @given(rate_values, st.integers(min_value=1, max_value=365))
+    @SETTINGS
+    def test_annual_period_round_trip_through_a_quote(
+        self, annual: float, m: int
+    ) -> None:
+        """A RateQuote's period return annualises back to the rate it came from."""
+        quote = cx.RateQuote(annual, pd.Timestamp("2024-01-31"))
+        period = quote.period_return(m)
+        recovered = cx.period_to_annual_rate(period, m)
+        assert recovered == pytest.approx(annual, abs=1e-12)
+
+    @given(st.lists(rate_values, min_size=1, max_size=12, unique=True))
+    @SETTINGS
+    def test_risk_free_series_alignment_never_looks_ahead(
+        self, values: list[float]
+    ) -> None:
+        """Aligned rates only ever come from an observation at or before the date."""
+        dates = pd.date_range("2024-01-31", periods=len(values), freq="ME")
+        series = cx.RiskFreeSeries(pd.Series(values, index=dates))
+        # Target the same calendar shifted a fortnight forward.
+        target = dates + pd.Timedelta(days=14)
+        aligned = series.align_to(target)
+        for pos, got in enumerate(aligned.to_numpy()):
+            if np.isnan(got):
+                continue
+            # Whichever observation supplied the value must not post-date the target.
+            source_dates = dates[np.isclose(values, got)]
+            assert bool((source_dates <= target[pos]).any())
+
+
+class TestZeroCurveInvariants:
+    @given(
+        st.lists(
+            rate_values.filter(lambda r: r > 0), min_size=2, max_size=6, unique=True
+        )
+    )
+    @SETTINGS
+    def test_discount_factor_is_bounded_and_starts_at_one(
+        self, rates: list[float]
+    ) -> None:
+        """For positive rates, discount factors lie in (0, 1] and DF(0) == 1."""
+        tenors = [float(i + 1) for i in range(len(rates))]
+        curve = cx.ZeroCurve(tenors, sorted(rates))
+        assert curve.discount_factor(0.0) == pytest.approx(1.0)
+        for t in (0.5, 1.0, tenors[-1], tenors[-1] + 2.0):
+            df = curve.discount_factor(t)
+            assert 0.0 < df <= 1.0
+
+    @given(rate_values.filter(lambda r: r != 0))
+    @SETTINGS
+    def test_flat_curve_forward_equals_zero_rate(self, rate: float) -> None:
+        """On a flat curve every forward rate equals the flat zero rate."""
+        curve = cx.ZeroCurve([1.0, 5.0, 10.0], [rate, rate, rate])
+        assert curve.forward_rate(2.0, 7.0) == pytest.approx(rate, abs=1e-12)
