@@ -49,11 +49,11 @@ yahoo = ["yfinance>=0.2.40"]
 all = ["convexity[providers,yahoo]"]
 
 [project.urls]
-Homepage = "https://github.com/OWNER/convexity"
-Documentation = "https://github.com/OWNER/convexity"
-Repository = "https://github.com/OWNER/convexity"
-Changelog = "https://github.com/OWNER/convexity/blob/main/CHANGELOG.md"
-Issues = "https://github.com/OWNER/convexity/issues"
+Homepage = "https://github.com/demilade-o/convexity"
+Documentation = "https://github.com/demilade-o/convexity"
+Repository = "https://github.com/demilade-o/convexity"
+Changelog = "https://github.com/demilade-o/convexity/blob/main/CHANGELOG.md"
+Issues = "https://github.com/demilade-o/convexity/issues"
 
 [dependency-groups]
 test = [

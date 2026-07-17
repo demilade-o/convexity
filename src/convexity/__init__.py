@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import logging
 
+from convexity import registry
 from convexity._diagnostics import show_versions, versions
 from convexity._version import __version__
 from convexity.alignment import align_asof, align_series
@@ -151,6 +152,7 @@ __all__ = [
     "max_drawdown",
     "pain_index",
     "period_to_annual_rate",
+    "registry",
     "resolve_annualisation",
     "rolling_calmar",
     "rolling_sharpe",
