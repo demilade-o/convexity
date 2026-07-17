@@ -1,0 +1,39 @@
+name: Incorrect metric result
+description: A metric returns a value you believe is wrong
+labels: [bug, numerical]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Disagreement with another library is not by itself a bug: libraries
+        differ on conventions, most notoriously the downside-deviation
+        denominator. Please tell us what you believe the correct answer is and
+        why, so we can tell a genuine defect from a convention difference.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Self-contained code with inline data. No network calls.
+      render: python
+    validations: {required: true}
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected value and its source
+      description: >
+        The value you expected, and where it comes from: a hand calculation, a
+        textbook example, a paper, or a vendor figure. Please state the
+        conventions you assumed (annualisation, compounding, MAR, day count).
+    validations: {required: true}
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual value
+    validations: {required: true}
+  - type: textarea
+    id: versions
+    attributes:
+      label: Environment
+      description: Output of `python -c "import convexity; convexity.show_versions()"`
+      render: text
+    validations: {required: true}

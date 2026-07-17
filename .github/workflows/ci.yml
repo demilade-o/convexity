@@ -1,0 +1,227 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege by default. Any job needing more requests it explicitly.
+permissions:
+  contents: read
+
+# A superseded run on the same ref is wasted compute; cancel it. Never cancel a
+# run on main, whose results gate the release.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  FORCE_COLOR: "1"
+  UV_FROZEN: "1"
+
+jobs:
+  lint:
+    name: Lint and format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Ruff format check
+        run: uv run --group lint ruff format --check --diff .
+      - name: Ruff lint
+        run: uv run --group lint ruff check --output-format=github .
+
+  typecheck:
+    name: Type check (strict)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: mypy --strict
+        run: uv run mypy
+
+  architecture:
+    name: Architecture boundaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      # Enforces that analytics never import a provider, and that the layering
+      # in docs/adr/0003-architecture.md is real rather than aspirational.
+      - name: import-linter
+        run: uv run --group lint lint-imports --verbose
+
+  test:
+    name: Test ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every supported version on Linux; representative versions on macOS and
+        # Windows. The oldest and newest supported are covered on all three, so
+        # a platform-specific break at either boundary cannot slip through.
+        os: [ubuntu-latest]
+        python: ["3.12", "3.13", "3.14"]
+        include:
+          - os: macos-latest
+            python: "3.12"
+          - os: macos-latest
+            python: "3.14"
+          - os: windows-latest
+            python: "3.12"
+          - os: windows-latest
+            python: "3.14"
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: uv sync --all-extras --group test
+      # --disable-socket is set in pyproject; this asserts the whole suite,
+      # including every provider test, runs with no network access at all.
+      - name: Test (network disabled)
+        run: uv run pytest --cov --cov-branch --cov-report=xml --cov-report=term-missing
+      - name: Doctests
+        run: uv run pytest --doctest-modules src/convexity -q
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 7
+
+  coverage-gate:
+    name: Coverage thresholds
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Run suite with coverage
+        run: uv run pytest --cov --cov-branch -q
+      # Two thresholds, deliberately. The computational core carries the
+      # numerical claims and is held to a higher bar than glue code.
+      - name: Computational core >= 95% (branch)
+        run: |
+          uv run coverage report \
+            --include="*/convexity/conventions/*,*/convexity/returns.py,*/convexity/risk.py,*/convexity/performance.py,*/convexity/validation.py,*/convexity/alignment.py,*/convexity/rates/*" \
+            --fail-under=95
+      - name: Total >= 90% (branch)
+        run: uv run coverage report --fail-under=90
+
+  minimum-dependencies:
+    name: Minimum supported dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      # The floors declared in pyproject are a promise. Resolving to the lowest
+      # direct versions proves the promise holds, rather than only ever testing
+      # whatever happens to be newest.
+      - name: Install lowest direct versions
+        run: uv sync --resolution lowest-direct --all-extras --group test
+      - name: Report resolved versions
+        run: uv run python -c "import numpy, pandas; print('numpy', numpy.__version__); print('pandas', pandas.__version__)"
+      - name: Test
+        run: uv run --no-sync pytest -q
+
+  packaging:
+    name: Build and install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Build wheel and sdist
+        run: uv build
+      - name: Validate metadata
+        run: uvx twine check --strict dist/*
+      - name: Verify artefact contents
+        run: uv run --no-project python scripts/check_artefacts.py
+      # Install from each artefact separately, in a clean environment with no
+      # source tree on the path. This is what a user actually gets.
+      - name: Install from wheel and import
+        run: |
+          uv venv /tmp/wheel-env
+          uv pip install --python /tmp/wheel-env dist/*.whl
+          cd /tmp && /tmp/wheel-env/bin/python -c "import convexity; print('wheel OK', convexity.__version__)"
+      - name: Install from sdist and import
+        run: |
+          uv venv /tmp/sdist-env
+          uv pip install --python /tmp/sdist-env dist/*.tar.gz
+          cd /tmp && /tmp/sdist-env/bin/python -c "import convexity; print('sdist OK', convexity.__version__)"
+      - name: Upload artefacts
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      # --strict turns warnings into errors: a broken cross-reference is a
+      # broken document, and documentation is part of the product here.
+      - name: Build docs (warnings as errors)
+        run: uv run --group docs mkdocs build --strict
+
+  # Single required status check for branch protection. Configure this one job
+  # as required rather than each matrix leg, so the matrix can change without
+  # editing repository settings.
+  ci-ok:
+    name: CI OK
+    if: always()
+    needs:
+      - lint
+      - typecheck
+      - architecture
+      - test
+      - coverage-gate
+      - minimum-dependencies
+      - packaging
+      - docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any dependency failed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "One or more required jobs did not succeed."
+          exit 1
+      - run: echo "All required jobs succeeded."

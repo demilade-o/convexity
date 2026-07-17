@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import logging
 
+from convexity._diagnostics import show_versions, versions
 from convexity._version import __version__
 from convexity.alignment import align_asof, align_series
 from convexity.conventions import (
@@ -155,6 +156,7 @@ __all__ = [
     "rolling_sharpe",
     "rolling_sortino",
     "sharpe_ratio",
+    "show_versions",
     "simple_returns",
     "skewness",
     "sortino_ratio",
@@ -163,6 +165,7 @@ __all__ = [
     "tracking_error",
     "ulcer_index",
     "upside_deviation",
+    "versions",
     "volatility",
     "wealth_index",
     "year_fraction",

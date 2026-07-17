@@ -1,0 +1,38 @@
+name: New data provider
+description: Propose a data-provider adapter
+labels: [enhancement, provider]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Free to access is not the same as openly licensed. A provider can only
+        be added if its terms permit the intended use, and we mark unknown legal
+        status as unknown rather than assuming.
+  - type: input
+    id: provider
+    attributes:
+      label: Provider and dataset
+    validations: {required: true}
+  - type: input
+    id: terms
+    attributes:
+      label: Link to current terms of use
+    validations: {required: true}
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Authentication
+      options: [None, API key, OAuth, Other]
+    validations: {required: true}
+  - type: textarea
+    id: licensing
+    attributes:
+      label: Licensing and redistribution
+      description: >
+        Who owns the underlying series? Does the provider grant redistribution?
+        Is commercial use permitted? State "unknown" where it is unknown.
+    validations: {required: true}
+  - type: textarea
+    id: limits
+    attributes:
+      label: Rate limits and known limitations

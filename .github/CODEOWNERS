@@ -1,0 +1,18 @@
+# Every file needs a reviewer. Order matters: the last matching rule wins.
+#
+# NOTE FOR THE MAINTAINER: replace @OWNER with the real GitHub handle before
+# enabling branch protection. CODEOWNERS silently does nothing if the handle
+# does not exist or lacks write access -- it fails open, so a wrong handle looks
+# identical to a working one until a review is silently not requested.
+
+* @OWNER
+
+# Anything that can publish, weaken a gate, or change what ships is
+# security-sensitive and must never be self-merged without review.
+/.github/workflows/   @OWNER
+/.github/CODEOWNERS   @OWNER
+/scripts/             @OWNER
+/pyproject.toml       @OWNER
+/uv.lock              @OWNER
+/LICENSE              @OWNER
+/NOTICE               @OWNER

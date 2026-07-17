@@ -1,0 +1,51 @@
+version: 2
+
+updates:
+  # GitHub Actions are pinned to immutable commit SHAs for supply-chain safety.
+  # That safety has a cost: a pinned SHA never picks up a security fix on its
+  # own. Dependabot is what makes pinning sustainable -- it opens a PR with the
+  # new SHA and the version comment updated together.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: scope
+    labels: [dependencies, github-actions]
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: uv
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build"
+      include: scope
+    labels: [dependencies, python]
+    groups:
+      # Development tooling churns constantly and cannot affect users, so batch
+      # it. Runtime dependencies are reviewed one at a time: a NumPy or pandas
+      # change can alter numerical results.
+      dev-tooling:
+        dependency-type: development
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # Majors for the numerical core are never automatic. pandas 3.0 changed the
+      # default datetime resolution from nanoseconds to microseconds, which
+      # silently broke frequency inference here; that class of change needs a
+      # human reading a migration guide, not a green tick.
+      - dependency-name: numpy
+        update-types: [version-update:semver-major]
+      - dependency-name: pandas
+        update-types: [version-update:semver-major]

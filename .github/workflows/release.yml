@@ -1,0 +1,192 @@
+name: Release
+
+# Deliberately NOT triggered by pushes to main. Publishing is an explicit act:
+# it happens when a maintainer pushes a version tag, and only after a human
+# approves the protected environment. A forked pull request can never reach this
+# workflow, and therefore can never obtain publishing credentials.
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to publish"
+        required: true
+        default: testpypi
+        type: choice
+        options: [testpypi, pypi]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Re-run the full gate from a clean checkout. A tag is not a promise that CI
+  # passed on the commit it points at.
+  verify:
+    name: Verify before release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv run --group lint ruff format --check .
+      - run: uv run --group lint ruff check .
+      - run: uv run mypy
+      - run: uv run pytest --cov --cov-branch -q
+      - name: Tag matches package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF#refs/tags/v}"
+          pkg="$(uv run --no-sync python -c 'import convexity; print(convexity.__version__)')"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::Tag v${tag} does not match package version ${pkg}."
+            exit 1
+          fi
+          echo "Tag and package version agree: ${pkg}"
+
+  build:
+    name: Build distributions
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Build wheel and sdist
+        run: uv build
+      - name: Validate metadata
+        run: uvx twine check --strict dist/*
+      - name: Verify artefact contents
+        run: uv run --no-project python scripts/check_artefacts.py
+      - id: version
+        run: echo "version=$(uv run --no-sync python -c 'import convexity; print(convexity.__version__)')" >> "$GITHUB_OUTPUT"
+      - name: Record checksums
+        run: |
+          cd dist && sha256sum * | tee SHA256SUMS
+      - name: Generate SBOM
+        uses: anchore/sbom-action@fbfd9c6c189226748411491745178e0c2017392d # v0.20.10
+        with:
+          path: ./dist
+          format: cyclonedx-json
+          output-file: dist/sbom.cyclonedx.json
+          upload-artifact: false
+      # These exact bytes are what gets published. Nothing is rebuilt downstream.
+      - name: Upload distributions
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: release-dist
+          path: dist/
+          retention-days: 30
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    if: github.event_name == 'push' || inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Protected environment: requires the reviewers configured in repository
+    # settings to approve before the job may start.
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/convexity
+    permissions:
+      id-token: write # OIDC token for Trusted Publishing. No API token exists.
+    steps:
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: release-dist
+          path: dist/
+      - name: Remove non-distribution files
+        run: rm -f dist/SHA256SUMS dist/sbom.cyclonedx.json
+      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  smoke-testpypi:
+    name: Smoke test TestPyPI artefact
+    needs: [build, publish-testpypi]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+      # Install the published artefact, not the local one, and exercise a real
+      # calculation. Dependencies come from real PyPI because TestPyPI does not
+      # mirror them.
+      - name: Install from TestPyPI and verify a calculation
+        run: |
+          uv venv /tmp/smoke
+          for i in 1 2 3 4 5; do
+            if uv pip install --python /tmp/smoke \
+              --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ \
+              "convexity==${{ needs.build.outputs.version }}"; then break; fi
+            echo "Index not ready, retrying in 20s..."; sleep 20
+          done
+          /tmp/smoke/bin/python - <<'PY'
+          import pandas as pd, convexity as cx
+          r = pd.Series([0.01] * 11 + [-0.03])
+          got = cx.sortino_ratio(r, mar=0.0, mar_is_annual=False, periods_per_year=12)
+          assert abs(got - 8 / 3) < 1e-12, f"published artefact is wrong: {got}"
+          print("TestPyPI artefact OK:", cx.__version__, "sortino:", got)
+          PY
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [build, smoke-testpypi]
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.target == 'pypi'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/p/convexity
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: release-dist
+          path: dist/
+      - name: Remove non-distribution files
+        run: rm -f dist/SHA256SUMS dist/sbom.cyclonedx.json
+      # attestations: true publishes PEP 740 provenance via the Trusted
+      # Publisher flow, so a consumer can verify these artefacts were built by
+      # this workflow from this repository.
+      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          attestations: true
+
+  github-release:
+    name: Attach artefacts to GitHub release
+    needs: [build, publish-pypi]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the release and upload assets
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: release-dist
+          path: dist/
+      - name: Create release with checksums and SBOM
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF#refs/tags/}" \
+            --title "${GITHUB_REF#refs/tags/}" \
+            --notes-file CHANGELOG.md \
+            --verify-tag \
+            dist/*.whl dist/*.tar.gz dist/SHA256SUMS dist/sbom.cyclonedx.json

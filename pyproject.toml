@@ -141,6 +141,40 @@ convention = "numpy"
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
 
+[tool.importlinter]
+root_package = "convexity"
+# Required so the forbidden-module contract can see third-party imports.
+include_external_packages = true
+
+# Layering is a product guarantee, not a convention: analytics that could import
+# a provider could perform I/O, and the promise that a metric never touches the
+# network would become unenforceable. These contracts fail CI when violated.
+[[tool.importlinter.contracts]]
+name = "Core layers are acyclic and directed downwards"
+type = "layers"
+layers = [
+    "convexity.performance",
+    "convexity.risk",
+    "convexity.alignment",
+    "convexity.returns",
+    "convexity.conventions",
+    "convexity.validation",
+    "convexity.exceptions",
+]
+
+[[tool.importlinter.contracts]]
+name = "Analytics never import optional or networking dependencies"
+type = "forbidden"
+source_modules = [
+    "convexity.alignment",
+    "convexity.conventions",
+    "convexity.performance",
+    "convexity.returns",
+    "convexity.risk",
+    "convexity.validation",
+]
+forbidden_modules = ["httpx", "urllib", "socket", "requests", "yfinance"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

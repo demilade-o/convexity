@@ -1,0 +1,36 @@
+name: New metric request
+description: Propose a metric for the catalogue
+labels: [enhancement, metric]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Metric name
+    validations: {required: true}
+  - type: textarea
+    id: formula
+    attributes:
+      label: Formula
+      description: In explicit notation, with every symbol defined.
+    validations: {required: true}
+  - type: textarea
+    id: reference
+    attributes:
+      label: Authoritative reference
+      description: >
+        A paper, textbook, or primary source. A link to another library's
+        source code is not sufficient: we need the definition, not an
+        implementation of it.
+    validations: {required: true}
+  - type: textarea
+    id: variants
+    attributes:
+      label: Known competing definitions
+      description: >
+        If the metric is defined differently by different authors, list the
+        variants. We expose variants rather than picking one silently.
+  - type: textarea
+    id: edge_cases
+    attributes:
+      label: Edge-case behaviour
+      description: What should happen for zero denominators, empty input, no downside?

@@ -1,0 +1,63 @@
+# Local hooks only, by design.
+#
+# The usual pattern mirrors each tool as a remote repo with its own `rev`, which
+# creates a second source of truth: pre-commit pins ruff at one version and
+# uv.lock pins it at another, and contributors get "passes locally, fails in CI".
+# Driving every hook through `uv run` means the versions come from uv.lock --
+# exactly what CI resolves -- so local and CI results cannot diverge.
+#
+#   uv run --group lint pre-commit install
+#
+# These are the fast checks only. The full suite runs in CI; a pre-commit hook
+# that takes a minute gets bypassed with --no-verify, which helps no one.
+
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --group lint ruff format
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-check
+        name: ruff lint
+        entry: uv run --group lint ruff check --fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: mypy
+        name: mypy (strict)
+        entry: uv run mypy
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false
+        require_serial: true
+
+      - id: import-linter
+        name: architecture boundaries
+        entry: uv run --group lint lint-imports
+        language: system
+        files: ^src/
+        pass_filenames: false
+        require_serial: true
+
+      - id: artefact-hygiene
+        name: no private or provider files staged
+        entry: python3 scripts/check_staged.py
+        language: system
+        pass_filenames: true
+        require_serial: true
+
+      - id: doctests
+        name: doctests
+        entry: uv run pytest --doctest-modules src/convexity -q
+        language: system
+        files: ^src/
+        pass_filenames: false
+        require_serial: true
