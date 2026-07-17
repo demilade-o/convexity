@@ -163,7 +163,5 @@ def period_to_annual_rate(
 
 def _check_periods_per_year(periods_per_year: float) -> None:
     if not np.isfinite(periods_per_year) or periods_per_year <= 0:
-        msg = (
-            f"periods_per_year must be finite and positive, got {periods_per_year!r}."
-        )
+        msg = f"periods_per_year must be finite and positive, got {periods_per_year!r}."
         raise ConventionError(msg)

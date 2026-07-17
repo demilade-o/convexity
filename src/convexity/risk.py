@@ -42,7 +42,7 @@ __all__ = [
 
 
 class DownsideConvention(enum.Enum):
-    """Denominator convention for downside and upside deviation.
+    r"""Denominator convention for downside and upside deviation.
 
     This choice materially changes the number, and libraries disagree, so it is
     surfaced rather than assumed.
@@ -365,7 +365,7 @@ def volatility(
     ddof: int = 1,
     nan_policy: NaNPolicy = NaNPolicy.RAISE,
 ) -> float:
-    r"""Standard deviation of returns, optionally annualised.
+    r"""Compute the standard deviation of returns, optionally annualised.
 
     .. math:: \sigma_{ann} = \sigma_{period} \cdot \sqrt{m}
 
@@ -443,7 +443,8 @@ def downside_deviation(
     r"""Root of the second lower partial moment about a minimum acceptable return.
 
     .. math::
-        \text{DD} = \sqrt{\frac{1}{n}\sum_{t=1}^{n}\left[\min(r_t - \text{MAR}, 0)\right]^2}
+        \text{DD} = \sqrt{\frac{1}{n}\sum_{t=1}^{n}
+                          \left[\min(r_t - \text{MAR}, 0)\right]^2}
 
     Under :attr:`DownsideConvention.FULL` (the default) the denominator is the
     total observation count :math:`n`, matching Sortino and Price (1994).
@@ -528,7 +529,8 @@ def upside_deviation(
     r"""Root of the second *upper* partial moment about a target.
 
     .. math::
-        \text{UD} = \sqrt{\frac{1}{n}\sum_{t=1}^{n}\left[\max(r_t - \text{MAR}, 0)\right]^2}
+        \text{UD} = \sqrt{\frac{1}{n}\sum_{t=1}^{n}
+                          \left[\max(r_t - \text{MAR}, 0)\right]^2}
 
     Parameters
     ----------
@@ -571,7 +573,10 @@ def skewness(
 ) -> float:
     r"""Sample skewness of returns.
 
-    .. math:: g_1 = \frac{\frac{1}{n}\sum (r_t - \bar{r})^3}{\left[\frac{1}{n}\sum (r_t - \bar{r})^2\right]^{3/2}}
+    .. math::
+
+        g_1 = \frac{\frac{1}{n}\sum (r_t - \bar{r})^3}
+                   {\left[\frac{1}{n}\sum (r_t - \bar{r})^2\right]^{3/2}}
 
     Parameters
     ----------
@@ -631,7 +636,10 @@ def kurtosis(
 ) -> float:
     r"""Sample kurtosis of returns.
 
-    .. math:: g_2 = \frac{\frac{1}{n}\sum (r_t - \bar{r})^4}{\left[\frac{1}{n}\sum (r_t - \bar{r})^2\right]^{2}}
+    .. math::
+
+        g_2 = \frac{\frac{1}{n}\sum (r_t - \bar{r})^4}
+                   {\left[\frac{1}{n}\sum (r_t - \bar{r})^2\right]^{2}}
 
     Parameters
     ----------
@@ -701,7 +709,7 @@ def tracking_error(
     ddof: int = 1,
     nan_policy: NaNPolicy = NaNPolicy.RAISE,
 ) -> float:
-    r"""Standard deviation of active returns against a benchmark.
+    r"""Compute the standard deviation of active returns against a benchmark.
 
     .. math:: \text{TE} = \sigma(r_t - b_t) \cdot \sqrt{m}
 
@@ -746,7 +754,9 @@ def tracking_error(
     )
 
 
-def _align_target(series: pd.Series, target: float | pd.Series, *, name: str) -> np.ndarray:
+def _align_target(
+    series: pd.Series, target: float | pd.Series, *, name: str
+) -> np.ndarray:
     """Broadcast a scalar target, or align a Series target, to ``series``."""
     if isinstance(target, pd.Series):
         from convexity.alignment import align_series

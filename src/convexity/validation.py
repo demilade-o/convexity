@@ -172,9 +172,7 @@ def validate_returns(
     >>> validate_returns(pd.Series([0.01, -0.02, 0.03])).tolist()
     [0.01, -0.02, 0.03]
     """
-    series = (
-        returns.copy() if isinstance(returns, pd.Series) else pd.Series(returns)
-    )
+    series = returns.copy() if isinstance(returns, pd.Series) else pd.Series(returns)
 
     try:
         series = series.astype(float)

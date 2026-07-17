@@ -30,11 +30,11 @@ def hand_worked_returns(monthly_index: pd.DatetimeIndex) -> pd.Series:
 
 @pytest.fixture
 def mixed_returns(monthly_index: pd.DatetimeIndex) -> pd.Series:
-    """A series with both gains and losses and a genuine drawdown."""
+    """Return a series with both gains and losses and a genuine drawdown."""
     return pd.Series([0.01, 0.02, -0.01, 0.03] * 3, index=monthly_index)
 
 
 @pytest.fixture
 def all_positive(monthly_index: pd.DatetimeIndex) -> pd.Series:
-    """A series that never falls: no downside, no drawdown."""
+    """Return a series that never falls: no downside, no drawdown."""
     return pd.Series([0.01] * 12, index=monthly_index)

@@ -106,6 +106,7 @@ from convexity.validation import NaNPolicy
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 __all__ = [
+    "AlignmentError",
     "Annualisation",
     "Compounding",
     "ConventionError",
@@ -130,7 +131,6 @@ __all__ = [
     "StaleDataError",
     "UndefinedMetricError",
     "ValidationError",
-    "AlignmentError",
     "__version__",
     "align_asof",
     "align_series",

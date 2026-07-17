@@ -88,17 +88,19 @@ def year_fraction(
     A 90-day interval under ACT/360 is exactly a quarter of a year:
 
     >>> import datetime as dt
-    >>> year_fraction(dt.date(2024, 1, 1), dt.date(2024, 3, 31), DayCount.ACT_360)
+    >>> start, end = dt.date(2024, 1, 1), dt.date(2024, 3, 31)
+    >>> year_fraction(start, end, DayCount.ACT_360)
     0.25
 
     The same interval under ACT/365F is shorter, because the denominator is larger:
 
-    >>> round(year_fraction(dt.date(2024, 1, 1), dt.date(2024, 3, 31), DayCount.ACT_365F), 10)
+    >>> round(year_fraction(start, end, DayCount.ACT_365F), 10)
     0.2465753425
 
     ACT/365F ignores the leap day in its denominator, so a full leap year exceeds 1:
 
-    >>> round(year_fraction(dt.date(2024, 1, 1), dt.date(2025, 1, 1), DayCount.ACT_365F), 10)
+    >>> round(year_fraction(dt.date(2024, 1, 1), dt.date(2025, 1, 1),
+    ...                     DayCount.ACT_365F), 10)
     1.002739726
     """
     start_ts = pd.Timestamp(start)

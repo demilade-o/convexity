@@ -8,8 +8,9 @@ Three routes exist, in strict precedence order:
 3. Inference from a :class:`~pandas.DatetimeIndex`, which is conservative,
    isolated, testable, and returns a confidence score plus diagnostics.
 
-If none of the three yields an answer, :class:`~convexity.exceptions.FrequencyInferenceError`
-is raised. The library does not fall back to 252.
+If none of the three yields an answer, a
+:class:`~convexity.exceptions.FrequencyInferenceError` is raised. The library
+does not fall back to 252.
 
 References
 ----------
@@ -127,7 +128,7 @@ class Annualisation:
             raise FrequencyInferenceError(msg)
 
 
-def infer_frequency(index: pd.DatetimeIndex) -> FrequencyInference:
+def infer_frequency(index: pd.Index) -> FrequencyInference:
     """Infer observation frequency from a :class:`~pandas.DatetimeIndex`.
 
     The index must be monotonic increasing and free of duplicates; validate it
@@ -136,8 +137,11 @@ def infer_frequency(index: pd.DatetimeIndex) -> FrequencyInference:
     Parameters
     ----------
     index
-        Index to inspect. At least three observations are required to see two
-        gaps, which is the minimum evidence for a regularity claim.
+        Index to inspect. Accepts any :class:`~pandas.Index` so that callers
+        without type checking still get a clear error rather than an attribute
+        failure, but only a ``DatetimeIndex`` can be inferred from. At least
+        three observations are required to see two gaps, which is the minimum
+        evidence for a regularity claim.
 
     Returns
     -------

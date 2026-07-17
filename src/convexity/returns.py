@@ -166,9 +166,7 @@ def to_simple_returns(log_rets: pd.Series) -> pd.Series:
     [0.1]
     """
     series = pd.Series(log_rets).astype(float)
-    return pd.Series(
-        np.expm1(series.to_numpy()), index=series.index, name=series.name
-    )
+    return pd.Series(np.expm1(series.to_numpy()), index=series.index, name=series.name)
 
 
 def wealth_index(
@@ -239,7 +237,7 @@ def cumulative_return(
     -0.01
     """
     series = validate_returns(returns, nan_policy=nan_policy, min_observations=1)
-    return float((1.0 + series).prod() - 1.0)
+    return float(np.prod(1.0 + series.to_numpy()) - 1.0)
 
 
 def annualised_return(
@@ -293,7 +291,7 @@ def annualised_return(
     series = validate_returns(returns, nan_policy=nan_policy, min_observations=1)
     ann = _resolve(series, periods_per_year, frequency)
 
-    growth = float((1.0 + series).prod())
+    growth = float(np.prod(1.0 + series.to_numpy()))
     n = len(series)
 
     if growth <= 0.0:
@@ -361,7 +359,7 @@ def cagr(
         )
         raise InsufficientDataError(msg)
 
-    growth = float((1.0 + series).prod())
+    growth = float(np.prod(1.0 + series.to_numpy()))
     if growth <= 0.0:
         return -1.0
 
@@ -403,7 +401,8 @@ def arithmetic_annualised_return(
     Examples
     --------
     >>> import pandas as pd
-    >>> round(arithmetic_annualised_return(pd.Series([0.01] * 12), periods_per_year=12), 6)
+    >>> r = pd.Series([0.01] * 12)
+    >>> round(arithmetic_annualised_return(r, periods_per_year=12), 6)
     0.12
     """
     series = validate_returns(returns, nan_policy=nan_policy, min_observations=1)
@@ -415,9 +414,7 @@ def _validate_prices(prices: pd.Series, *, nan_policy: NaNPolicy) -> pd.Series:
     series = pd.Series(prices).astype(float).copy()
 
     if len(series) < 2:
-        msg = (
-            f"At least 2 prices are required to compute a return, got {len(series)}."
-        )
+        msg = f"At least 2 prices are required to compute a return, got {len(series)}."
         raise InsufficientDataError(msg)
 
     from convexity.validation import apply_nan_policy

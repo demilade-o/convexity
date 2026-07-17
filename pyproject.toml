@@ -127,9 +127,8 @@ select = [
     "S",    # bandit security
 ]
 ignore = [
-    "D105",   # magic method docstrings
-    "D107",   # __init__ docstring (documented at class level)
-    "PD901",  # `df` is a fine name in tests/examples
+    "D105",  # magic method docstrings
+    "D107",  # __init__ docstring (documented at class level)
 ]
 
 [tool.ruff.lint.per-file-ignores]

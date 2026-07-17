@@ -60,7 +60,10 @@ def sharpe_ratio(
 ) -> float:
     r"""Annualised Sharpe ratio.
 
-    .. math:: S = \frac{m \cdot \overline{(r_t - f_t)}}{\sigma(r_t - f_t) \cdot \sqrt{m}}
+    .. math::
+
+        S = \frac{m \cdot \overline{(r_t - f_t)}}
+                 {\sigma(r_t - f_t) \cdot \sqrt{m}}
 
     The excess return is computed per period and *then* annualised, so a
     time-varying risk-free series is handled correctly rather than being reduced
@@ -132,7 +135,10 @@ def sortino_ratio(
 ) -> float:
     r"""Annualised Sortino ratio.
 
-    .. math:: \text{Sortino} = \frac{m \cdot \overline{(r_t - \text{MAR}_t)}}{\text{DD} \cdot \sqrt{m}}
+    .. math::
+
+        \text{Sortino} = \frac{m \cdot \overline{(r_t - \text{MAR}_t)}}
+                              {\text{DD} \cdot \sqrt{m}}
 
     where :math:`\text{DD}` is the downside deviation about the same target. The
     denominator convention is explicit: see :class:`~convexity.risk.DownsideConvention`.
