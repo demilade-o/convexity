@@ -153,6 +153,7 @@ include_external_packages = true
 name = "Core layers are acyclic and directed downwards"
 type = "layers"
 layers = [
+    "convexity.rates",
     "convexity.performance",
     "convexity.risk",
     "convexity.alignment",
@@ -169,11 +170,28 @@ source_modules = [
     "convexity.alignment",
     "convexity.conventions",
     "convexity.performance",
+    "convexity.rates",
     "convexity.returns",
     "convexity.risk",
     "convexity.validation",
 ]
 forbidden_modules = ["httpx", "urllib", "socket", "requests", "yfinance"]
+
+# The data layer is the one place networking is allowed. It must still never
+# depend back on itself cyclically, and importing convexity must not pull it in.
+[[tool.importlinter.contracts]]
+name = "The data layer never imports analytics providers into the core namespace"
+type = "forbidden"
+source_modules = [
+    "convexity.exceptions",
+    "convexity.validation",
+    "convexity.conventions",
+    "convexity.returns",
+    "convexity.risk",
+    "convexity.performance",
+    "convexity.rates",
+]
+forbidden_modules = ["convexity.data.providers"]
 
 [tool.mypy]
 python_version = "3.12"

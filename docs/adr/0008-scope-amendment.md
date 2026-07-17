@@ -40,7 +40,7 @@ are on a maintenance track already.
 `requires-python = ">=3.12"`. The CI matrix tests 3.12, 3.13 and 3.14 on Linux,
 plus the oldest and newest on macOS and Windows.
 
-## Amendment 2: 0.1.0 covers foundations; other domains are deferred
+## Amendment 2: 0.1.0 covers foundations, the rate subsystem and the provider layer; the remaining asset domains are deferred
 
 ### Reason
 
@@ -53,20 +53,40 @@ Attempting all of it at once produces thin validation everywhere — which is th
 failure mode the specification most wants to avoid, and worse than a smaller
 release done properly. Correctness before coverage of surface area.
 
+The dividing line is which parts the goal makes a *release condition*. The
+risk-free-rate subsystem and the pluggable, provenance-bearing data layer with a
+key-free official rate provider are named explicitly in the goal's completion
+conditions (4) and (5); they cannot be deferred without failing the goal, and
+the ratios already accept time-varying rate inputs that these models exist to
+supply. They are therefore in 0.1.0. The remaining *asset* domains — portfolio,
+fixed income, equity, commodities — are genuinely separable milestones and are
+deferred with targets.
+
+### History
+
+An earlier revision of this ADR deferred the rate subsystem and provider layer
+to 0.2.0 as well. That was corrected on **2026-07-17** by owner decision: those
+two subsystems are release conditions for 0.1.0, not deferrable scope. The record
+is kept rather than rewritten silently.
+
 ### Decision
 
 **In scope for 0.1.0:** the conventions layer, returns, dispersion, downside and
 drawdown risk, the Sharpe/Sortino/Calmar ratios with scalar and time-varying
-rate support, alignment with point-in-time integrity, the metric registry, and
-complete project infrastructure.
+rate support, alignment with point-in-time integrity, the metric registry, the
+risk-free-rate subsystem (`RateQuote`, `RiskFreeSeries`, `ZeroCurve`,
+`RiskFreePolicy`), the capability-based provider layer (protocols, registry,
+safe cache, retrying transport, offline mode) with one key-free official rate
+provider (U.S. Treasury Fiscal Data) and the optional research-only yfinance
+adapter, and complete project infrastructure.
 
 **Deferred, with targets** — recorded in `ROADMAP.md` and in the traceability
 matrix as deferred-with-target, never dropped:
 
 | Area | Target |
 | --- | --- |
-| Risk-free-rate subsystem, provider protocol, Treasury/ECB/yfinance adapters | 0.2.0 |
 | Portfolio analytics | 0.2.0 |
+| Further rate/economic providers (ECB, FRED) | 0.2.0 |
 | Fixed income, remaining day counts, curve bootstrap | 0.3.0 |
 | Equity and commodity analytics, futures curves, continuous series | 0.4.0 |
 | VaR/ES, factor and regression analytics, further ratios | 0.5.0 |
