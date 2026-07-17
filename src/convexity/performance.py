@@ -28,7 +28,12 @@ from convexity.alignment import align_asof
 from convexity.conventions import Compounding, Frequency, annual_to_period_rate
 from convexity.exceptions import NoOverlapError
 from convexity.returns import annualised_return
-from convexity.risk import DownsideConvention, downside_deviation, max_drawdown
+from convexity.risk import (
+    DownsideConvention,
+    downside_deviation,
+    exact_std,
+    max_drawdown,
+)
 from convexity.validation import NaNPolicy, validate_returns
 
 if TYPE_CHECKING:
@@ -118,7 +123,7 @@ def sharpe_ratio(
 
     excess = series.to_numpy() - target
     numerator = float(np.mean(excess)) * ppy
-    denominator = float(np.std(excess, ddof=ddof)) * float(np.sqrt(ppy))
+    denominator = exact_std(excess, ddof=ddof) * float(np.sqrt(ppy))
     return _safe_ratio(numerator, denominator)
 
 

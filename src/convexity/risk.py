@@ -30,6 +30,7 @@ __all__ = [
     "downside_deviation",
     "drawdown_episodes",
     "drawdown_series",
+    "exact_std",
     "kurtosis",
     "max_drawdown",
     "pain_index",
@@ -418,7 +419,7 @@ def volatility(
         )
         raise InsufficientDataError(msg)
 
-    sigma = float(np.std(series.to_numpy(), ddof=ddof))
+    sigma = exact_std(series.to_numpy(), ddof=ddof)
     if not annualise:
         return sigma
 
@@ -752,6 +753,29 @@ def tracking_error(
         ddof=ddof,
         nan_policy=NaNPolicy.PROPAGATE,
     )
+
+
+def exact_std(values: np.ndarray, *, ddof: int) -> float:
+    """Compute a standard deviation that is exactly zero for a constant input.
+
+    ``np.std`` over bit-identical values does not return ``0.0``: subtracting the
+    mean leaves rounding dust of order 1e-18, and the square root of that dust is
+    a small positive number.
+
+    That dust is not harmless. A ratio built on it divides a real numerator by
+    ~1e-18 and reports something like 1.5e16 -- a meaningless artefact of binary
+    floating point that looks like a finite answer. The honest result for a
+    zero-dispersion series is the documented zero-denominator policy (an
+    infinity), which only fires if the denominator is exactly zero.
+
+    A series whose range is exactly zero has zero dispersion by definition, so
+    this checks the range rather than trusting the reduction.
+    """
+    if values.size == 0:
+        return float("nan")
+    if float(np.ptp(values)) == 0.0:
+        return 0.0
+    return float(np.std(values, ddof=ddof))
 
 
 def _align_target(

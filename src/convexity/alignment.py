@@ -8,13 +8,18 @@ happily broadcast a future value onto a past date.
 
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
 import pandas as pd
 
-from convexity.exceptions import LookAheadError, NoOverlapError, StaleDataError
+from convexity.exceptions import NoOverlapError, StaleDataError
 from convexity.validation import NaNPolicy, apply_nan_policy, validate_datetime_index
 
 __all__ = ["align_asof", "align_series"]
+
+#: Datetime resolutions pandas supports, ordered coarsest to finest.
+DatetimeUnit = Literal["s", "ms", "us", "ns"]
 
 
 def align_series(
@@ -130,9 +135,9 @@ def align_asof(
         If no target date has any prior source observation.
     StaleDataError
         If ``max_staleness`` is exceeded for any target date.
-    LookAheadError
-        If the source index is not sorted, which would make the as-of match
-        non-deterministic.
+    IndexValidationError
+        If either index is not a sorted, unique ``DatetimeIndex``. Sorting is
+        required for the backward match to be deterministic.
 
     Examples
     --------
@@ -150,16 +155,11 @@ def align_asof(
     >>> align_asof(pd.to_datetime(["2023-12-01", "2024-01-15"]), rates).tolist()
     [nan, 0.05]
     """
-    validate_datetime_index(target_index)
+    # validate_datetime_index enforces monotonicity and uniqueness on both sides,
+    # which is what makes the backward match deterministic.
+    target_checked = validate_datetime_index(target_index)
     source_series = pd.Series(source).astype(float)
     source_index = validate_datetime_index(source_series.index)
-
-    if not source_index.is_monotonic_increasing:
-        msg = (
-            f"{name} index must be sorted for a deterministic as-of match; it is "
-            f"not monotonic increasing."
-        )
-        raise LookAheadError(msg)
 
     effective = source_series.copy()
     if publication_lag is not None:
@@ -167,9 +167,18 @@ def align_asof(
         # its publication lag has elapsed.
         effective.index = source_index + publication_lag
 
-    frame_target = pd.DataFrame(index=target_index).reset_index(names="_target")
+    # merge_asof requires both join keys to share a dtype exactly, and pandas
+    # does not guarantee a single datetime resolution: adding a Timedelta can
+    # promote an index to nanoseconds while the other side stays microseconds.
+    # Normalise both to the finer of the two so no timestamp precision is lost.
+    effective_index = pd.DatetimeIndex(effective.index)
+    unit = _finer_unit(target_checked.unit, effective_index.unit)
+    target_norm = target_checked.as_unit(unit)
+    source_norm = effective_index.as_unit(unit)
+
+    frame_target = pd.DataFrame(index=target_norm).reset_index(names="_target")
     frame_source = pd.DataFrame(
-        {"_value": effective.to_numpy(), "_observed": effective.index}
+        {"_value": effective.to_numpy(), "_observed": source_norm}
     )
 
     merged = pd.merge_asof(
@@ -203,7 +212,15 @@ def align_asof(
             )
             raise StaleDataError(msg)
 
-    return pd.Series(values, index=target_index, name=source_series.name)
+    return pd.Series(values, index=target_checked, name=source_series.name)
+
+
+_UNIT_ORDER: tuple[DatetimeUnit, ...] = ("s", "ms", "us", "ns")
+
+
+def _finer_unit(left: DatetimeUnit, right: DatetimeUnit) -> DatetimeUnit:
+    """Return whichever datetime unit carries more precision."""
+    return max(left, right, key=_UNIT_ORDER.index)
 
 
 def _span(series: pd.Series) -> str:
