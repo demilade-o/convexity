@@ -1,0 +1,188 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "convexity"
+dynamic = ["version"]
+description = "Explicit, well-tested quantitative finance analytics with documented conventions and provenance-bearing data adapters."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Demi Oyeyemi", email = "oyeyemidemilade@gmail.com" }]
+maintainers = [{ name = "Demi Oyeyemi", email = "oyeyemidemilade@gmail.com" }]
+keywords = [
+    "quantitative-finance",
+    "performance-analytics",
+    "risk",
+    "sortino",
+    "calmar",
+    "drawdown",
+    "risk-free-rate",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
+]
+
+# Core runtime stays deliberately minimal: NumPy + pandas only.
+# SciPy is NOT a 0.1.0 runtime dependency -- see docs/adr/0004-tooling.md.
+dependencies = ["numpy>=2.1", "pandas>=2.2"]
+
+[project.optional-dependencies]
+# HTTP-backed official data providers (Treasury, ECB). Never imported by core.
+providers = ["httpx>=0.27"]
+# Research/personal-use only. See docs/providers/provider-matrix.md.
+yahoo = ["yfinance>=0.2.40"]
+all = ["convexity[providers,yahoo]"]
+
+[project.urls]
+Homepage = "https://github.com/OWNER/convexity"
+Documentation = "https://github.com/OWNER/convexity"
+Repository = "https://github.com/OWNER/convexity"
+Changelog = "https://github.com/OWNER/convexity/blob/main/CHANGELOG.md"
+Issues = "https://github.com/OWNER/convexity/issues"
+
+[dependency-groups]
+test = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "hypothesis>=6.112",
+    "pytest-socket>=0.7",
+    "respx>=0.21",
+    "httpx>=0.27",
+]
+lint = ["ruff>=0.8", "mypy>=1.13", "import-linter>=2.1", "pandas-stubs>=2.2"]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.27",
+    "pymdown-extensions>=10.11",
+]
+security = ["pip-audit>=2.7"]
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+    { include-group = "docs" },
+    { include-group = "security" },
+]
+
+[tool.hatch.version]
+path = "src/convexity/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/convexity"]
+
+[tool.hatch.build.targets.sdist]
+# Strict allowlist: only these paths are ever placed in the sdist.
+include = [
+    "/src",
+    "/tests",
+    "/docs",
+    "/README.md",
+    "/LICENSE",
+    "/NOTICE",
+    "/CHANGELOG.md",
+    "/CITATION.cff",
+    "/pyproject.toml",
+]
+exclude = ["/ref", "**/__pycache__", "**/.pytest_cache", "**/*.pyc"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "A",    # builtins shadowing
+    "C4",   # comprehensions
+    "PT",   # pytest style
+    "SIM",  # simplify
+    "TID",  # tidy imports
+    "RUF",  # ruff-specific
+    "NPY",  # numpy-specific
+    "PD",   # pandas-vet
+    "D",    # pydocstyle
+    "ANN",  # annotations
+    "S",    # bandit security
+]
+ignore = [
+    "D105",   # magic method docstrings
+    "D107",   # __init__ docstring (documented at class level)
+    "PD901",  # `df` is a fine name in tests/examples
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "D100", "D101", "D102", "D103", "D104", "ANN001", "ANN201"]
+"docs/**" = ["D", "ANN"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+disallow_any_generics = true
+files = ["src", "tests"]
+plugins = []
+
+[[tool.mypy.overrides]]
+# yfinance ships no type information and is an optional research-only adapter.
+module = ["yfinance.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+# --disable-socket proves analytics and provider tests make no real network calls.
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--disable-socket",
+    "-ra",
+]
+markers = [
+    "live: hits real provider endpoints; excluded from default and CI runs",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source = ["convexity"]
+parallel = false
+
+[tool.coverage.paths]
+source = ["src/convexity", "*/site-packages/convexity"]
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]
+show_missing = true
+skip_covered = false
