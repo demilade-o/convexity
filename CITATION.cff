@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+title: "convexity: quantitative finance analytics with explicit conventions"
+message: "If you use this software in research, please cite it."
+type: software
+authors:
+  - family-names: Oyeyemi
+    given-names: Demi
+    email: oyeyemidemilade@gmail.com
+repository-code: "https://github.com/demilade-o/convexity"
+url: "https://github.com/demilade-o/convexity"
+abstract: >-
+  An open-source Python library for quantitative finance analytics. Provides
+  performance, risk, drawdown and risk-adjusted return metrics with documented
+  formulas, explicit conventions, and honest failure modes. Annualisation,
+  compounding, day count, risk-free treatment and missing-data policy are
+  explicit parameters rather than silent defaults; where the literature offers
+  competing definitions, the variants are exposed and the default is documented
+  with its source. The computational core performs no network I/O; data
+  retrieval lives behind optional, provenance-bearing provider adapters.
+keywords:
+  - quantitative finance
+  - performance analytics
+  - risk
+  - drawdown
+  - Sortino ratio
+  - Calmar ratio
+  - Sharpe ratio
+  - risk-free rate
+  - Python
+license: Apache-2.0
+version: 0.1.0
