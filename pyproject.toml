@@ -45,7 +45,7 @@ dependencies = ["numpy>=2.1", "pandas>=2.2"]
 # HTTP-backed official data providers (Treasury, ECB). Never imported by core.
 providers = ["httpx>=0.27"]
 # Research/personal-use only. See docs/providers/provider-matrix.md.
-yahoo = ["yfinance>=0.2.40"]
+yahoo = ["yfinance>=1.5.2"]
 all = ["convexity[providers,yahoo]"]
 
 [project.urls]
