@@ -127,12 +127,12 @@ uv run pytest --cov --cov-branch -q
 | REQ-PKG-001 | `uv build`; `uvx twine check --strict dist/*` |
 | REQ-PKG-002 | Clean-venv install and import from wheel and from sdist |
 | REQ-PKG-003 | `scripts/check_artefacts.py` asserts `convexity/py.typed` is a wheel member |
-| REQ-PKG-004 | `.github/workflows/ci.yml` `test` matrix — **defined; executes on a remote** |
-| REQ-PKG-005 | `.github/workflows/ci.yml` `minimum-dependencies` job — **defined; executes on a remote** |
+| REQ-PKG-004 | `.github/workflows/ci.yml` `test` matrix — **verified on CI at `dcbbf19`**: 3.12/3.13/3.14 on Ubuntu, 3.12 and 3.14 on macOS and Windows, all green |
+| REQ-PKG-005 | `.github/workflows/ci.yml` `minimum-dependencies` job — **verified on CI at `dcbbf19`** |
 | REQ-PKG-006 | `coverage report --fail-under=95` (core) and `--fail-under=90` (total), both exit 0 |
 | REQ-PKG-007 | `ruff format --check`, `ruff check`, `mypy`, `lint-imports` |
 | REQ-PKG-008 | `mkdocs build --strict` |
-| REQ-PKG-009 | `.github/workflows/security.yml` — **defined; executes on a remote** |
+| REQ-PKG-009 | `.github/workflows/security.yml` — **verified on CI at `dcbbf19`**: CodeQL, `pip-audit` and the secret scan all pass |
 | REQ-PKG-010 | `.github/workflows/release.yml` — **defined; requires owner approval and a remote** |
 | REQ-PKG-011 | `test_registry.py::TestRegistryCoversThePublicApi::test_every_exported_metric_is_registered` (34 of 34) |
 | REQ-PKG-012 | `test_registry.py::TestSpecCompleteness::*`; hand derivations for Sharpe, Sortino and Calmar; 31 property tests |
@@ -141,8 +141,8 @@ uv run pytest --cov --cov-branch -q
 
 | Status | Count |
 | --- | --- |
-| Implemented and locally verified | 68 |
-| Implemented; configuration verified, execution requires a remote | 5 |
+| Implemented and verified (locally and, where remote, on CI at `dcbbf19`) | 71 |
+| Implemented; execution awaits the release pipeline or owner action | 2 |
 | Deferred with a target release | 13 |
 | **Unimplemented and untracked** | **0** |
 
