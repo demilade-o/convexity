@@ -24,12 +24,14 @@ Everything below was run locally on a single machine.
 | respx / httpx | 0.23.1 / 0.28.1 |
 | uv | 0.11.26 |
 
-!!! warning "One interpreter, one OS"
-    These results were observed on **CPython 3.14.6 on macOS only**. The project
-    targets 3.12–3.14 on Linux, macOS and Windows, and the CI matrix is defined
-    for all of them, but the other interpreters and operating systems have not
-    executed this code. Their green ticks require a remote that does not yet
-    exist. See [Requires a remote](#requires-a-remote).
+!!! note "Where each result was observed"
+    The command output quoted below was produced **locally on CPython 3.14.6 /
+    macOS**. The project targets 3.12–3.14 on Linux, macOS and Windows; those
+    other interpreters and operating systems have since executed this code on
+    GitHub Actions. The full matrix, the dependency audit, CodeQL and the secret
+    scan all pass on commit `dcbbf19` (2026-08-12) — see
+    [Verified on CI](#verified-on-ci). What remains genuinely unrun is the
+    release/publish pipeline and the human-only owner settings, listed at the end.
 
 ## Format and lint
 
@@ -62,10 +64,10 @@ Exit `0`.
 ## Tests and coverage
 
 ```
-pytest --cov --cov-branch          # 676 passed
+pytest --cov --cov-branch          # 681 passed
 ```
 
-676 tests pass with the network disabled for the entire suite (`--disable-socket`
+681 tests pass with the network disabled for the entire suite (`--disable-socket`
 in `pyproject.toml`). Provider tests use respx-mocked HTTP and injected clocks;
 no test opens a real socket.
 
@@ -168,43 +170,53 @@ miss.
   private planning material, no credentials, and no provider data. Enforced at
   commit time by `scripts/check_staged.py` and at build time by
   `scripts/check_artefacts.py`.
-- **Dependency audit (`pip-audit`):** configured in the security workflow. It
-  **could not be executed locally** in this run because the sandbox could not
-  reach `pypi.org` to fetch the advisory database (a `ReadTimeout`). This is an
-  environment limitation, not an audit result; the job runs on CI where the index
-  is reachable. Listed under [Requires a remote](#requires-a-remote).
+- **Dependency audit (`pip-audit`):** could not be executed locally — the
+  sandbox cannot reach `pypi.org` to fetch the advisory database — so it runs on
+  CI, where the index is reachable, and **passes** on commit `dcbbf19`. The audit
+  exports the resolved dependency set with `--no-emit-project`, so it checks the
+  third-party dependencies rather than `convexity` itself, which is unpublished.
+  See [Verified on CI](#verified-on-ci).
 
-## Requires a remote
+## Verified on CI
 
-The following are fully configured and locally verified as far as is possible,
-but their execution needs GitHub-hosted infrastructure that does not yet exist.
-None is claimed to have passed.
+The repository is now hosted at `github.com/demilade-o/convexity`, and the CI and
+Security workflows have executed against commit `dcbbf19` (2026-08-12). The
+following ran on GitHub-hosted runners and **passed** — they are no longer merely
+configured:
 
-- **CI matrix** across Python 3.12/3.13/3.14 on Linux, plus the oldest and newest
-  on macOS and Windows. Only 3.14.6 on macOS has actually run this code.
-- **Minimum-dependency job** pinning the lowest declared versions.
-- **`pip-audit`** against the resolved dependency set.
-- **CodeQL / static security analysis** and **secret scanning** on the remote.
-- **Release workflow:** PyPI Trusted Publishing via OIDC, SBOM and attestations.
-  It publishes on a tag, under owner-approved environment protection, and never
-  on an ordinary push or a forked pull request.
+- **CI matrix** — the test suite on Python 3.12/3.13/3.14 on Ubuntu, and 3.12 and
+  3.14 on both macOS and Windows. Seven legs, all green; Linux and Windows have
+  now executed this code, not only macOS.
+- **Minimum-dependency job** pinning the lowest declared versions (NumPy 2.1,
+  pandas 2.2).
+- **`pip-audit`** against the resolved dependency set (third-party only).
+- **CodeQL** (`security-extended`) and the **detect-secrets** scan over the full
+  history. CodeQL flaked once on a transient TLS error fetching its own tool
+  bundle and passed on re-run; it is not a code finding.
+- **Dependency review** on pull requests, enabled once the repository's dependency
+  graph was switched on.
 
-## Requires a human with owner access
+## Still requires a human with owner access
 
-These cannot be done by automation and are not done:
+These cannot be done by automation and have **not** been done. None is claimed:
 
-- Creating the public GitHub repository and pushing.
-- Configuring branch protection: required status checks, required review,
-  conversation resolution, no force-push or deletion.
-- Registering the PyPI Trusted Publisher and the protected release environment.
-- Publishing to TestPyPI/PyPI.
+- **Release / publish pipeline:** PyPI Trusted Publishing via OIDC, SBOM and
+  attestations. It publishes only on a tag, under owner-approved environment
+  protection, never on an ordinary push or a forked pull request — and no tag has
+  been cut.
+- **Branch protection:** required status checks, required review, conversation
+  resolution, no force-push or deletion on `main`.
+- **Registering the PyPI Trusted Publisher** and the protected release environment.
+- **Publishing to TestPyPI/PyPI.**
 
-A maintainer runbook for these steps lives alongside the project documentation.
+The public repository itself has been created and `main` pushed by the owner. A
+maintainer runbook for the remaining steps lives alongside the project
+documentation.
 
 ## Summary
 
 Every locally provable gate for the `0.1.0` candidate passes on CPython 3.14.6 /
-macOS: format, lint, strict typing, architecture contracts, 676 network-disabled
+macOS: format, lint, strict typing, architecture contracts, 681 network-disabled
 tests, both coverage thresholds, doctests, packaging build and clean install from
 both artefacts, and the strict documentation build. What remains is genuinely
 remote- or human-gated, and is listed above rather than asserted.
