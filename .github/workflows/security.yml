@@ -46,8 +46,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       # Audit what actually resolves, not what pyproject loosely permits.
+      # --no-emit-project drops convexity itself: it is not published to PyPI, so
+      # pip-audit --strict would otherwise fail trying to look it up rather than
+      # auditing our third-party dependencies.
       - name: Export resolved dependencies
-        run: uv export --format requirements-txt --no-hashes --all-extras -o /tmp/resolved.txt
+        run: uv export --format requirements-txt --no-hashes --all-extras --no-emit-project -o /tmp/resolved.txt
       - name: pip-audit
         run: uvx pip-audit --requirement /tmp/resolved.txt --strict --progress-spinner=off
 
@@ -78,8 +81,12 @@ jobs:
         with:
           fetch-depth: 0 # full history: a secret removed from HEAD is still leaked
       - uses: astral-sh/setup-uv@2ddd2b9cb38ad8efd50337e8ab201519a34c9f24 # v7.1.1
+      # Exclude .git/ itself: with --all-files, detect-secrets walks the internal
+      # git files too, and a commit SHA in .git/FETCH_HEAD trips the high-entropy
+      # plugin. Those are our own object IDs, not credentials, and their presence
+      # varies by checkout (why this passed on a push but failed on a PR).
       - name: Scan history for credentials
-        run: uvx detect-secrets scan --all-files --force-use-all-plugins > /tmp/secrets.json
+        run: uvx detect-secrets scan --all-files --force-use-all-plugins --exclude-files '^\.git/' > /tmp/secrets.json
       - name: Fail on findings
         run: |
           python3 - <<'PY'
