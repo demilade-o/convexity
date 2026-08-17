@@ -39,7 +39,7 @@ classifiers = [
 
 # Core runtime stays deliberately minimal: NumPy + pandas only.
 # SciPy is NOT a 0.1.0 runtime dependency -- see docs/adr/0004-tooling.md.
-dependencies = ["numpy>=2.1", "pandas>=3.0.5"]
+dependencies = ["numpy>=2.5.2", "pandas>=3.0.5"]
 
 [project.optional-dependencies]
 # HTTP-backed official data providers (Treasury, ECB). Never imported by core.
