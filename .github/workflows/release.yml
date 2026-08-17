@@ -76,7 +76,7 @@ jobs:
         run: |
           cd dist && sha256sum * | tee SHA256SUMS
       - name: Generate SBOM
-        uses: anchore/sbom-action@fbfd9c6c189226748411491745178e0c2017392d # v0.20.10
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           path: ./dist
           format: cyclonedx-json
@@ -110,7 +110,7 @@ jobs:
           path: dist/
       - name: Remove non-distribution files
         run: rm -f dist/SHA256SUMS dist/sbom.cyclonedx.json
-      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           repository-url: https://test.pypi.org/legacy/
 
@@ -163,7 +163,7 @@ jobs:
       # attestations: true publishes PEP 740 provenance via the Trusted
       # Publisher flow, so a consumer can verify these artefacts were built by
       # this workflow from this repository.
-      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           attestations: true
 
